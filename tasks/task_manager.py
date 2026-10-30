@@ -14,7 +14,7 @@ sample_size: örneklem büyüklüğü (int)
 Output: Seçilen örneklem listesi.
 """
 def simple_random_sampling(data: list, sample_size: int) -> list:
-    pass
+    return random.sample(data, sample_size)
 
 
 """
@@ -28,7 +28,8 @@ step: adım sayısı (int)
 Output: Seçilen örneklem listesi.
 """
 def systematic_sampling(data: list, step: int) -> list:
-    pass
+    start = random.randrange(step)
+    return data[start::step]
 
 
 """
@@ -47,7 +48,11 @@ Input:
 Output: Örneklem listesi.
 """
 def stratified_sampling(data: list, strata_key: callable, sample_size_per_stratum: int) -> list:
-    pass
+    import pandas as pd
+    s = pd.Series(data)
+    roles = s.map(strata_key)
+    shuffled = s.sample(frac=1)
+    return shuffled.groupby(roles).head(sample_size_per_stratum).tolist()
 
 
 """
@@ -65,7 +70,12 @@ Input:
 Output: Seçilen tüm elemanları içeren liste.
 """
 def cluster_sampling(clusters: dict, cluster_ids: list) -> list:
-   pass
+    result = []
+
+    for id in cluster_ids:
+       result.extend(clusters[id])
+
+    return result
 
 """
 Açıklama: data listesinden, kolay erişilebilir ilk max_samples elemanı seçer.
@@ -78,7 +88,7 @@ Input:
 Output: Örneklem listesi.
 """
 def convenience_sampling(data: list, max_samples: int) -> list:
-    pass
+    return data[:max_samples]
 
 
 """
@@ -90,7 +100,8 @@ Input:
 Output: Seçilen elemanların listesi.
 """
 def judgmental_sampling(data: list, judge_func: callable) -> list:
-    pass
+    selected = filter(judge_func, data)
+    return list(selected)
 
 
 """
@@ -109,7 +120,14 @@ Input:
 Output: Örneklem listesi.
 """
 def quota_sampling(data: list, strata_key: callable, quotas: dict) -> list:
-    pass
+    import pandas as pd
+    s = pd.Series(data)
+    roles = s.map(strata_key)
+    order = roles.groupby(roles).cumcount()
+    limits = roles.map(quotas)
+
+    return s[order < limits].tolist()
+
 
 
 """
@@ -125,4 +143,11 @@ Output: Seçilen örneklem listesi.
 
 """
 def snowball_sampling(data: list, seed_ids: list, get_neighbors: callable, max_samples: int) -> list:
-    pass
+    sample = seed_ids.copy()
+
+    for person in sample:
+        sample.extend(x for x in get_neighbors(person) if x in data and x not in sample)
+        if len(sample) >= max_samples:
+            break
+
+    return sample[:max_samples]
